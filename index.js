@@ -171,7 +171,7 @@ app.delete('/api/ingredientes/:id', async (req, res) => {
 });
 
 app.get('/api/usuarios', async (req, res) => {
-    const [rows] = await db.query('SELECT id_usuario, nombre, correo, fecha_registro FROM usuarios');
+    const [rows] = await db.query('SELECT id_usuario, nombre, correo, fecha_registro, rol FROM usuarios');
     res.json(rows);
 });
 app.post('/api/usuarios', async (req, res) => {
@@ -180,9 +180,19 @@ app.post('/api/usuarios', async (req, res) => {
     res.json({ mensaje: 'Usuario creado' });
 });
 app.put('/api/usuarios/:id', async (req, res) => {
-    const { nombre, correo } = req.body;
-    await db.query('UPDATE usuarios SET nombre=?, correo=? WHERE id_usuario=?', [nombre, correo, req.params.id]);
-    res.json({ mensaje: 'Usuario actualizado' });
+    const { nombre, correo, rol, password_hash } = req.body;
+    try {
+        if (password_hash) {
+            await db.query('UPDATE usuarios SET nombre=?, correo=?, rol=?, password_hash=? WHERE id_usuario=?', 
+            [nombre, correo, rol, password_hash, req.params.id]);
+        } else {
+            await db.query('UPDATE usuarios SET nombre=?, correo=?, rol=? WHERE id_usuario=?', 
+            [nombre, correo, rol, req.params.id]);
+        }
+        res.json({ mensaje: 'Usuario actualizado' });
+    } catch (error) {
+        res.status(500).json({ error: 'Error al actualizar usuario' });
+    }
 });
 app.delete('/api/usuarios/:id', async (req, res) => {
     await db.query('DELETE FROM usuarios WHERE id_usuario=?', [req.params.id]);
